@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Naxbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        /* Basic CSS for layout and styling - Reused from home.html */
+        body {
+            margin: 0;
+            font-family: 'Google Sans Flex', Arial, Helvetica, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        /* Spark effect styling (for mousemove) - Reused from home.html */
+        #spark-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .spark {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: fade-and-shrink 0.6s ease-out forwards;
+        }
+
+        @keyframes fade-and-shrink {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* Header Styling - Reused from home.html */
+        header {
+            position: sticky; /* Changed to sticky for chat page */
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            z-index: 10;
+            box-sizing: border-box;
+            transition: background-color 0.5s ease, backdrop-filter 0.5s ease, -webkit-backdrop-filter 0.5s ease;
+        }
+
+        /* Glass effect for header on scroll - Reused from home.html */
+        header.header-glass {
+            background-color: rgba(16, 14, 14, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 0;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #ffffff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 70px;
+            margin-right: 10px;
+        }
+
+        /* Navigation styling - Reused from home.html */
+        nav {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 20px;
+        }
+
+        nav ul li a {
+            font-family: 'Google Sans Flex', sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            text-decoration: none;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            display: inline-block;
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        nav ul li a:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        nav ul li a:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Profile Section Animation - Reused from home.html */
+        .profile-section {
+            position: relative;
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+        }
+
+        .profile-photo-container {
+            display: flex;
+            align-items: center;
+            transition: all 0.5s ease-in-out;
+            padding: 5px;
+            border-radius: 25px;
+            background-color: transparent;
+        }
+
+        .profile-photo-img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            transition: width 0.5s ease-in-out, height 0.5s ease-in-out, margin-right 0.5s ease-in-out;
+        }
+
+        .user-name {
+            font-family: 'Google Sans Flex', sans-serif;
+            font-weight: 500;
+            color: #ffffff;
+            margin-left: 0;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            opacity: 0;
+            transition: max-width 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-left 0.5s ease-in-out;
+        }
+
+        /* State when profile is active/open */
+        .profile-section.open .profile-photo-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding-right: 15px;
+        }
+
+        .profile-section.open .profile-photo-img {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .profile-section.open .user-name {
+            max-width: 200px;
+            opacity: 1;
+            margin-left: 10px;
+        }
+
+        /* Enhanced Profile Dropdown Styling - Reused from home.html */
+        .profile-dropdown {
+            position: absolute;
+            top: 70px;
+            right: 0;
+            background: linear-gradient(145deg, rgba(25, 25, 25, 0.9), rgba(10, 10, 10, 0.9));
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 12px;
+            border: 1px solid rgba(70, 70, 70, 0.5);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            min-width: 220px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            visibility: hidden; /* Added visibility for smoother transition */
+            transition: max-height 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease-in-out 0.2s, visibility 0.4s ease-in-out;
+        }
+
+        .profile-dropdown.show {
+            max-height: 300px;
+            opacity: 1;
+            visibility: visible;
+            padding: 10px 0;
+        }
+
+        .profile-dropdown li {
+            transform: translateY(15px);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out;
+            padding: 0 15px;
+        }
+
+        .profile-dropdown.show li {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Stagger animation for list items */
+        .profile-dropdown.show li:nth-child(1) { transition-delay: 0.3s; }
+        .profile-dropdown.show li:nth-child(2) { transition-delay: 0.35s; }
+        .profile-dropdown.show li:nth-child(3) { transition-delay: 0.4s; }
+        .profile-dropdown.show li:nth-child(4) { transition-delay: 0.45s; }
+
+        .profile-dropdown li a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 1.05em;
+            border-radius: 8px;
+            transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+        }
+
+        .profile-dropdown li a i {
+            margin-right: 12px;
+            color: #888;
+            transition: color 0.2s ease;
+        }
+
+        .profile-dropdown li a:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            transform: translateX(5px);
+        }
+
+        .profile-dropdown li a:hover i {
+            color: #ffffff;
+        }
+
+        /* Chat Specific Styling */
+        .chat-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between messages */
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 85%;
+            word-wrap: break-word; /* Ensure long words wrap */
+        }
+
+        .message.user {
+            background-color: #333; /* Darker background for user messages */
+            align-self: flex-end; /* Align user messages to the right */
+            color: #e0e0e0;
+            border-bottom-right-radius: 2px; /* Slight corner adjustment */
+        }
+
+        .message.ai {
+            background-color: #0d47a1; /* Blue background for AI messages */
+            align-self: flex-start; /* Align AI messages to the left */
+            color: #ffffff;
+            border-bottom-left-radius: 2px; /* Slight corner adjustment */
+            position: relative; /* For loading indicator */
+        }
+
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0; /* Prevent avatar from shrinking */
+        }
+
+        .message-content {
+            flex-grow: 1;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            padding-top: 15px;
+        }
+
+        #chatInput {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #2a2a2a;
+            color: #ffffff;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #chatInput:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        #sendButton {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #sendButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        #sendButton:active {
+            transform: translateY(0);
+        }
+
+        #newChatButton {
+            background-color: #6c757d;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-left: 10px; /* Space between send and new chat */
+        }
+
+        #newChatButton:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        #newChatButton:active {
+            transform: translateY(0);
+        }
+
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e0e0e0;
+            font-style: italic;
+            margin-top: 10px;
+            padding-left: 40px; /* Align with AI message content */
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-content h3 {
+            font-size: 1.8em;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            font-size: 1.1em;
+            color: #e0e0e0;
+            margin-bottom: 30px;
+        }
+
+        .modal-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Centered User Name and ID */
+        .centered-user-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1; /* Take up available space */
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            /* Added margin-top to push it down from the header */
+            margin-top: 50px;
+        }
+
+        .centered-user-info h2 {
+            font-size: 3em; /* Larger font for "Hello, Sarthak" */
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #ffffff;
+            /* Gradient effect similar to the image */
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .centered-user-info p {
+            font-size: 1.2em;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 10px 20px;
+            }
+
+            .logo img {
+                height: 50px;
+            }
+
+            nav ul {
+                gap: 10px;
+            }
+
+            nav ul li a {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+
+            .profile-photo-img {
+                width: 30px;
+                height: 30px;
+            }
+
+            .profile-section.open .profile-photo-img {
+                width: 40px;
+                height: 40px;
+            }
+
+            .chat-container {
+                padding: 10px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+            }
+
+            .chat-history {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .message {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+
+            .chat-input-area {
+                flex-direction: column; /* Stack input and buttons vertically */
+                gap: 10px;
+            }
+
+            #chatInput {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+
+            #sendButton, #newChatButton {
+                width: 100%; /* Full width buttons */
+                margin-left: 0; /* Remove left margin */
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+
+            .centered-user-info h2 {
+                font-size: 2em; /* Adjust font size for mobile */
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .chat-container {
+                max-width: 800px;
+                padding: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .chat-container {
+                max-width: 700px;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .message-content {
+                font-size: 0.95em;
+            }
+        }
+
+        @media (max-width: 576px) {
+            header {
+                padding: 8px 15px;
+            }
+
+            .logo {
+                font-size: 1.8em;
+            }
+
+            .logo img {
+                height: 40px;
+            }
+
+            nav ul {
+                gap: 5px;
+            }
+
+            nav ul li a {
+                padding: 6px 12px;
+                font-size: 0.8em;
+            }
+
+            .chat-container {
+                padding: 8px;
+            }
+
+            .message {
+                padding: 6px 10px;
+                max-width: 95%;
+            }
+
+            .message-content {
+                font-size: 0.85em;
+            }
+
+            .message-avatar {
+                width: 25px;
+                height: 25px;
+            }
+
+            .profile-photo-img {
+                width: 25px;
+                height: 25px;
+            }
+
+            .profile-section.open .profile-photo-img {
+                width: 35px;
+                height: 35px;
+            }
+
+            .profile-dropdown {
+                min-width: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="spark-container"></div>
+
+    <header>
+        <button class="mobile-menu-button" id="mobileMenuButton">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a href="home.html" class="logo">
+            <img src="image-removebg-preview.png" alt="Your AI Assistant Logo">
+        </a>
+
+        <nav id="mainNav">
+            <ul>
+                <li><a href="home.html">Home</a></li>
+                <li><a href="chat.html">Chat</a></li>
+                <li><a href="home.html#your-own-naxbot">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+
+        <div class="profile-section" id="profileSection">
+            <div class="profile-photo-container">
+                <img id="headerProfileImg" src="https://placehold.co/35x35/0a0a0a/ffffff?text=U" alt="User Profile Photo" class="profile-photo-img">
+                <span class="user-name" id="headerUserName">Guest</span>
+            </div>
+            <ul class="profile-dropdown" id="profileDropdown">
+                <li><a href="profile.html"><i class="fas fa-user-circle"></i> My Profile</a></li>
+                <li><a href="chat.html"><i class="fas fa-comments"></i> Chat</a></li>
+                <li><a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </header>
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <main class="chat-container">
+        <div class="centered-user-info">
+            <h2 id="centeredUserName">Hello, User</h2>
+        </div>
+
+        <div id="chatHistory" class="chat-history">
+            <!-- Initial AI greeting. This will be replaced by Firestore history -->
+            <div class="message ai initial-ai-message">
+                <img src="Screenshot_2025-06-02_125254-removebg-preview.png" alt="AI Avatar" class="message-avatar">
+                <div class="message-content">Hello! How can I assist you today?</div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Type your message...">
+            <button id="sendButton">Send</button>
+            <button id="newChatButton">New Chat</button>
+        </div>
+    </main>
+
+    <div id="messageModalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modalTitle"></h3>
+            <p id="modalMessage"></p>
+            <button id="modalCloseButton" class="modal-button">OK</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, addDoc, onSnapshot, serverTimestamp, deleteDoc, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
+
+        // Firebase configuration provided by the user
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtpAivhHLb-WBDBgZT0SSV91K-2IXEpDg",
+            authDomain: "zolski-ai-naxbot.firebaseapp.com",
+            projectId: "zolski-ai-naxbot",
+            storageBucket: "zolski-ai-naxbot.firebasestorage.app",
+            messagingSenderId: "355383653507",
+            appId: "1:355383653507:web:75948a059ae83bb06a57b6",
+            measurementId: "G-G0KD3HHBP1"
+        };
+
+        // Using the projectId as the appId for Firestore paths
+        const appId = firebaseConfig.projectId;
+
+        let app;
+        let auth;
+        let db;
+        let analytics;
+        let currentUserId = null; // To store the authenticated user's UID
+        let userProfileData = null; // To store user profile data
+
+        // Function to show custom modal messages
+        function showModal(title, message, isConfirmation = false, onConfirm = null) {
+            const modalOverlay = document.getElementById('messageModalOverlay');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalCloseButton = document.getElementById('modalCloseButton'); // This will be the "OK" or "Confirm" button
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+
+            // Clear previous event listeners and buttons
+            modalCloseButton.onclick = null;
+            const existingCancelButton = modalOverlay.querySelector('.cancel-button');
+            if (existingCancelButton) existingCancelButton.remove();
+
+            if (isConfirmation) {
+                modalCloseButton.textContent = 'Confirm';
+                modalCloseButton.style.backgroundColor = '#007bff'; // Blue for confirm
+                modalCloseButton.onclick = () => {
+                    if (onConfirm) onConfirm();
+                    modalOverlay.classList.remove('show');
+                };
+
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = 'Cancel';
+                cancelButton.classList.add('modal-button', 'ml-4', 'cancel-button');
+                cancelButton.style.backgroundColor = '#dc3545'; // Red for cancel
+                cancelButton.onclick = () => {
+                    modalOverlay.classList.remove('show');
+                };
+                modalCloseButton.parentNode.appendChild(cancelButton);
+
+            } else {
+                modalCloseButton.textContent = 'OK';
+                modalCloseButton.style.backgroundColor = '#007bff';
+                modalCloseButton.onclick = () => {
+                    modalOverlay.classList.remove('show');
+                };
+            }
+
+            modalOverlay.classList.add('show');
+        }
+
+        // Initialize Firebase and set up auth state listener
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                analytics = getAnalytics(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    const headerProfileImg = document.getElementById('headerProfileImg');
+                    const headerUserName = document.getElementById('headerUserName');
+                    const logoutLink = document.getElementById('logoutLink');
+                    const centeredUserName = document.getElementById('centeredUserName');
+
+                    if (user) {
+                        currentUserId = user.uid;
+                        console.log("Firebase authenticated. User ID:", currentUserId);
+
+                        // Fetch user profile data from Firestore
+                        const profileRef = doc(db, `artifacts/${appId}/users/${currentUserId}/profiles`, currentUserId);
+                        try {
+                            const profileSnap = await getDoc(profileRef);
+                            if (profileSnap.exists()) {
+                                userProfileData = profileSnap.data();
+                                headerUserName.textContent = userProfileData.username || user.email || 'User';
+                                headerProfileImg.src = userProfileData.photoURL || 'https://placehold.co/35x35/0a0a0a/ffffff?text=U';
+                                centeredUserName.textContent = `Hello, ${userProfileData.username || user.email.split('@')[0]}`;
+                            } else {
+                                // If no profile exists, create a default one
+                                const defaultUsername = user.email ? user.email.split('@')[0] : 'User';
+                                userProfileData = {
+                                    username: defaultUsername,
+                                    email: user.email || '',
+                                    photoURL: ''
+                                };
+                                await setDoc(profileRef, userProfileData);
+                                headerUserName.textContent = defaultUsername;
+                                headerProfileImg.src = 'https://placehold.co/35x35/0a0a0a/ffffff?text=U';
+                                centeredUserName.textContent = `Hello, ${defaultUsername}`;
+                            }
+                        } catch (profileError) {
+                            console.error("Error fetching or setting profile data:", profileError);
+                            showModal("Profile Error", "Failed to load profile data.");
+                            headerUserName.textContent = user.email ? user.email.split('@')[0] : 'User';
+                            headerProfileImg.src = 'https://placehold.co/35x35/0a0a0a/ffffff?text=U';
+                            centeredUserName.textContent = `Hello, ${user.email ? user.email.split('@')[0] : 'User'}`;
+                        }
+
+                        logoutLink.onclick = handleLogout; // Attach logout handler
+                        setupChatListener(); // Start listening for chat messages only after authentication
+                    } else {
+                        // No user is signed in, redirect to login page
+                        console.log("No user signed in. Redirecting to index.html");
+                        window.location.href = `${window.location.origin}/index.html`;
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showModal("Firebase Error", "Failed to initialize Firebase. Please try again later.");
+            }
+        }
+
+        // Function to handle logout
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                showModal("Logged Out", "You have been successfully logged out.");
+                // onAuthStateChanged listener will handle the redirect to index.html
+            } catch (error) {
+                console.error("Error logging out:", error);
+                showModal("Logout Error", `Failed to log out: ${error.message}`);
+            }
+        }
+
+        // DOM Elements
+        const chatHistoryDiv = document.getElementById('chatHistory');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const newChatButton = document.getElementById('newChatButton');
+
+        // Avatar image paths
+        const aiAvatarSrc = "Screenshot_2025-06-02_125254-removebg-preview.png";
+
+        // Function to display a message in the chat history
+        function displayMessage(sender, text) {
+            // Remove the initial AI greeting if it's still there
+            const initialGreeting = chatHistoryDiv.querySelector('.initial-ai-message');
+            if (initialGreeting) {
+                initialGreeting.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+
+            const avatarImg = document.createElement('img');
+            avatarImg.classList.add('message-avatar');
+            avatarImg.src = sender === 'user' ? 
+                (userProfileData?.photoURL || 'https://placehold.co/30x30/0a0a0a/ffffff?text=U') : 
+                aiAvatarSrc;
+            avatarImg.alt = sender === 'user' ? 'User Avatar' : 'AI Avatar';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.classList.add('message-content');
+            contentDiv.innerHTML = text.replace(/\n/g, '<br>'); // Preserve newlines
+
+            messageDiv.appendChild(avatarImg);
+            messageDiv.appendChild(contentDiv);
+            chatHistoryDiv.appendChild(messageDiv);
+
+            // Use requestAnimationFrame to ensure smooth scrolling after the DOM update
+            requestAnimationFrame(() => {
+                chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            });
+        }
+
+        // Function to add a loading indicator
+        function showLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loadingIndicator'; // Assign an ID for easy removal
+            loadingDiv.classList.add('loading-indicator');
+            loadingDiv.innerHTML = `
+                <img src="${aiAvatarSrc}" alt="AI Avatar" class="message-avatar">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            `;
+            chatHistoryDiv.appendChild(loadingDiv);
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+        }
+
+        // Function to remove the loading indicator
+        function hideLoadingIndicator() {
+            const loadingDiv = document.getElementById('loadingIndicator');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+
+        // =====================================================================================
+        // CRUCIAL CHANGE: Define your deployed Render Backend API URL here
+        // IMPORTANT: Replace 'https://zolski-ai-api.onrender.com' with your actual Render Web Service URL!
+        // You can find this URL in your Render Dashboard under your Backend Web Service's 'Info' tab.
+        const backendApiUrl = 'https://zolski-ai-api.onrender.com'; 
+        // =====================================================================================
+
+        // Function to send a message to the AI
+        async function sendMessage() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            // Clear input field and disable button immediately
+            chatInput.value = '';
+            sendButton.disabled = true;
+
+            // Display user message immediately
+            displayMessage('user', userMessage);
+
+            // Show loading indicator
+            showLoadingIndicator();
+
+            try {
+                if (!currentUserId) {
+                    showModal("Authentication Required", "Please log in to save your chat history and use the AI.");
+                    sendButton.disabled = false;
+                    hideLoadingIndicator();
+                    return;
+                }
+
+                // --- Fetch current chat history from Firestore for AI context ---
+                const chatMessagesQuery = query(
+                    collection(db, `artifacts/${appId}/users/${currentUserId}/chats`),
+                    orderBy('timestamp')
+                );
+                const querySnapshot = await getDocs(chatMessagesQuery);
+                let chatHistoryForAI = [];
+
+                // Reconstruct chat history in Gemini API format
+                querySnapshot.forEach(doc => {
+                    const msg = doc.data();
+                    // Ensure the initial AI greeting is not duplicated if it's already in Firestore
+                    if (!(msg.sender === 'ai' && msg.text === "Hello! How can I assist you today?")) {
+                        chatHistoryForAI.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
+                    }
+                });
+
+                // Add the current user message to the history for the AI call
+                chatHistoryForAI.push({ role: "user", parts: [{ text: userMessage }] });
+
+                // Save user message to Firestore
+                await addDoc(collection(db, `artifacts/${appId}/users/${currentUserId}/chats`), {
+                    sender: 'user',
+                    text: userMessage,
+                    timestamp: serverTimestamp()
+                });
+
+                // --- Call Backend Proxy for AI Response ---
+                // MODIFIED: Using the backendApiUrl constant
+                const payload = { contents: chatHistoryForAI }; // Send the full history
+
+                console.log("Sending payload to backend proxy:", payload);
+
+                const response = await fetch(`${backendApiUrl}/chat`, { // <--- UPDATED THIS LINE
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                console.log("Backend proxy response data:", result);
+
+                if (response.ok && result.reply) {
+                    const aiResponseText = result.reply;
+                    displayMessage('ai', aiResponseText);
+
+                    // Save AI response to Firestore
+                    await addDoc(collection(db, `artifacts/${appId}/users/${currentUserId}/chats`), {
+                        sender: 'ai',
+                        text: aiResponseText,
+                        timestamp: serverTimestamp()
+                    });
+                } else if (result.error) {
+                    // If backend returns an error message
+                    displayMessage('ai', `AI Error: ${result.error}`);
+                    showModal("AI Response Error", `AI could not respond: ${result.error}`);
+                    console.error("Backend proxy error:", result.error);
+                } else {
+                    // Fallback for unexpected or empty responses from backend
+                    displayMessage('ai', "I apologize, but I couldn't get a valid response from the AI. Please try again.");
+                    showModal("AI Response Error", "Unexpected AI response. Please check backend logs.");
+                    console.error("Unexpected backend response structure or no reply:", result);
+                }
+            } catch (error) {
+                console.error("Error during AI interaction:", error);
+                displayMessage('ai', "I'm having trouble connecting to the AI. Please ensure your backend is running and check your network.");
+                showModal("Connection Error", "Could not connect to the AI service. Please try again later.");
+            } finally {
+                hideLoadingIndicator();
+                sendButton.disabled = false; // Re-enable button
+            }
+        }
+
+        // Function to set up real-time listener for chat messages from Firestore
+        function setupChatListener() {
+            if (!currentUserId) {
+                console.warn("User ID not available for chat listener setup. Chat history will not load.");
+                return;
+            }
+
+            const q = query(collection(db, `artifacts/${appId}/users/${currentUserId}/chats`), orderBy('timestamp'));
+
+            onSnapshot(q, (snapshot) => {
+                // Clear existing messages, but keep the initial AI greeting if it's still there
+                const initialGreetingExists = chatHistoryDiv.querySelector('.initial-ai-message');
+                chatHistoryDiv.innerHTML = ''; // Clear all messages first
+
+                if (snapshot.empty && !initialGreetingExists) {
+                    // If history is empty and no initial greeting, add it back
+                    const initialMessageDiv = document.createElement('div');
+                    initialMessageDiv.classList.add('message', 'ai', 'initial-ai-message');
+                    initialMessageDiv.innerHTML = `
+                        <img src="${aiAvatarSrc}" alt="AI Avatar" class="message-avatar">
+                        <div class="message-content">Hello! How can I assist you today?</div>
+                    `;
+                    chatHistoryDiv.appendChild(initialMessageDiv);
+                } else {
+                    // Re-add messages from snapshot
+                    snapshot.forEach((doc) => {
+                        const message = doc.data();
+                        displayMessage(message.sender, message.text);
+                    });
+                }
+                // Scroll to bottom after all messages are added
+                requestAnimationFrame(() => {
+                    chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+                });
+            }, (error) => {
+                console.error("Error listening to chat messages:", error);
+                showModal("Chat History Error", "Failed to load chat history. Please refresh the page.");
+            });
+        }
+
+        // Function to start a new chat (clear history)
+        async function newChat() {
+            if (!currentUserId) {
+                showModal("Authentication Required", "Please log in to start a new chat.");
+                return;
+            }
+
+            showModal(
+                "Confirm New Chat",
+                "Are you sure you want to start a new chat? This will clear your current conversation history.",
+                true, // isConfirmation = true
+                async () => { // onConfirm callback
+                    try {
+                        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/chats`);
+                        const querySnapshot = await getDocs(chatCollectionRef);
+                        const deletePromises = [];
+                        querySnapshot.forEach((doc) => {
+                            deletePromises.push(deleteDoc(doc.ref));
+                        });
+                        await Promise.all(deletePromises);
+                        console.log("Chat history cleared.");
+                        // The onSnapshot listener will automatically re-add the initial message if history is empty
+                    } catch (error) {
+                        console.error("Error clearing chat history:", error);
+                        showModal("Error", "Failed to clear chat history.");
+                    }
+                }
+            );
+        }
+
+        // Event Listeners
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { // Allow Shift+Enter for new line
+                e.preventDefault(); // Prevent default Enter behavior (new line)
+                sendMessage();
+            }
+        });
+        newChatButton.addEventListener('click', newChat);
+
+
+        // --- Reused Scripts from home.html for header and spark effects ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileSection = document.getElementById('profileSection');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            profileSection.addEventListener('click', function(event) {
+                const isOpen = profileSection.classList.contains('open');
+                if (isOpen) {
+                    profileDropdown.classList.remove('show');
+                    profileSection.classList.remove('open');
+                } else {
+                    profileSection.classList.add('open');
+                    setTimeout(() => {
+                        profileDropdown.classList.add('show');
+                    }, 100);
+                }
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!profileSection.contains(event.target) && profileSection.classList.contains('open')) {
+                    profileDropdown.classList.remove('show');
+                    profileSection.classList.remove('open');
+                }
+            });
+
+            // Toggle header glass effect on scroll
+            const header = document.querySelector('header');
+            // For chat page, header is always sticky, so apply glass effect immediately
+            header.classList.add('header-glass');
+
+            // Spark effect script (global, on mousemove)
+            const sparkContainer = document.createElement('div');
+            sparkContainer.id = 'spark-container';
+            document.body.appendChild(sparkContainer);
+
+            document.addEventListener('mousemove', (e) => {
+                createSpark(e.clientX, e.clientY);
+            });
+
+            function createSpark(x, y) {
+                const spark = document.createElement('div');
+                spark.classList.add('spark');
+                spark.style.left = `${x}px`;
+                spark.style.top = `${y}px`;
+
+                sparkContainer.appendChild(spark);
+
+                spark.addEventListener('animationend', () => {
+                    spark.remove();
+                });
+            }
+
+            // Initialize Firebase on DOMContentLoaded
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Custom font for the entire page */
+        body {
+            font-family: "Inter", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            overflow-y: auto;
+            background-color: #0a0a0a; /* Ensure a dark base background */
+        }
+
+        /* Navigation styling */
+        .nav-links {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Canvas for Three.js background */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            display: block;
+        }
+
+        /* Glass card effect */
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            z-index: 1;
+            position: relative;
+            margin: 40px 0;
+        }
+
+        /* 3D Scene Container */
+        .scene-container {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.3), rgba(147, 51, 234, 0.3));
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Floating animation for the 3D elements */
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotateY(0deg); }
+            50% { transform: translateY(-10px) rotateY(180deg); }
+        }
+
+        .floating-3d {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Pulse effect for interactive elements */
+        .pulse-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
+        }
+
+        /* Scroll Animation Classes */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .fade-in-up.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .fade-in-left {
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .fade-in-left.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .fade-in-right {
+            opacity: 0;
+            transform: translateX(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .fade-in-right.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .scale-in {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .scale-in.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Modal Styling (reused from chat.html) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-content h3 {
+            font-size: 1.8em;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            font-size: 1.1em;
+            color: #e0e0e0;
+            margin-bottom: 30px;
+        }
+
+        .modal-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-button:hover {
+            background-color: #0056b3;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #333;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="glass-card flex flex-col lg:flex-row rounded-3xl p-6 md:p-10 max-w-6xl w-full mx-auto overflow-hidden">
+        <div class="flex-1 flex items-center justify-center p-4 md:p-8 lg:pr-10 lg:w-1/2 w-full h-64 lg:h-auto fade-in-left">
+            <div class="scene-container w-full h-full relative">
+                <iframe src="https://my.spline.design/genkubgreetingrobot-Gm7AvrAqCbikQ5gmBAbS6z1K/?transparent=1&hideInfos=1" frameborder="0" width="100%" height="100%" class="w-full h-full absolute top-0 left-0"></iframe>
+            </div>
+        </div>
+
+        <div class="flex-1 p-4 md:p-8 lg:pl-10 lg:w-1/2 w-full fade-in-right">
+            <div class="flex justify-center mb-6 scale-in">
+                <img src="image-removebg-preview.png" alt="Zolski Logo" class="h-24 w-24 object-cover" style="border: none;">
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 text-white fade-in-up">Welcome Back!</h2>
+
+            <div class="flex justify-center mb-8 fade-in-up">
+                <button id="loginTab" class="px-6 py-3 rounded-l-xl text-lg font-semibold transition-all duration-300 bg-blue-600 text-white shadow-lg">Login</button>
+                <button id="signupTab" class="px-6 py-3 rounded-r-xl text-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-blue-600 hover:text-white">Sign Up</button>
+            </div>
+
+            <form id="loginForm" class="space-y-6 scale-in">
+                <div>
+                    <label for="loginEmail" class="block text-gray-300 text-sm font-medium mb-2">Email Address</label>
+                    <input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com"
+                           class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-gray-300 border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                           required>
+                </div>
+                <div>
+                    <label for="loginPassword" class="block text-gray-300 text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="loginPassword" name="loginPassword" placeholder="••••••••"
+                           class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-gray-300 border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                           required>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="rememberMe" name="rememberMe" class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        <label for="rememberMe" class="ml-2 text-gray-300">Remember me</label>
+                    </div>
+                    <a href="#" id="forgotPasswordLink" class="text-blue-400 hover:text-blue-300 transition-colors duration-300">Forgot Password?</a>
+                </div>
+                <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    Login
+                </button>
+            </form>
+
+            <form id="signupForm" class="space-y-6 hidden">
+                <div>
+                    <label for="signupUsername" class="block text-gray-300 text-sm font-medium mb-2">Username</label>
+                    <input type="text" id="signupUsername" name="signupUsername" placeholder="your_username"
+                           class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-gray-300 border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                           required>
+                </div>
+                <div>
+                    <label for="signupEmail" class="block text-gray-300 text-sm font-medium mb-2">Email Address</label>
+                    <input type="email" id="signupEmail" name="signupEmail" placeholder="you@example.com"
+                           class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-gray-300 border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                           required>
+                </div>
+                <div>
+                    <label for="signupPassword" class="block text-gray-300 text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="signupPassword" name="signupPassword" placeholder="••••••••"
+                           class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-gray-300 border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                           required>
+                </div>
+                <div>
+                    <label for="confirmPassword" class="block text-gray-300 text-sm font-medium mb-2">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="••••••••"
+                           class="w-full p-3 rounded-lg bg-white bg-opacity-20 border border-gray-300 border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                           required>
+                </div>
+                <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    Sign Up
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="messageModalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modalTitle"></h3>
+            <p id="modalMessage"></p>
+            <button id="modalCloseButton" class="modal-button">OK</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
+
+
+        // Firebase configuration provided by the user
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtpAivhHLb-WBDBgZT0SSV91K-2IXEpDg",
+            authDomain: "zolski-ai-naxbot.firebaseapp.com",
+            projectId: "zolski-ai-naxbot",
+            storageBucket: "zolski-ai-naxbot.firebasestorage.app",
+            messagingSenderId: "355383653507",
+            appId: "1:355383653507:web:75948a059ae83bb06a57b6",
+            measurementId: "G-G0KD3HHBP1"
+        };
+
+        // Using the projectId as the appId for Firestore paths
+        const appId = firebaseConfig.projectId;
+
+        let app;
+        let auth;
+        let db;
+        let analytics; // Declare analytics variable
+
+        // Function to show custom modal messages (reused from chat.html)
+        function showModal(title, message, input = false, callback = null) {
+            const modalOverlay = document.getElementById('messageModalOverlay');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            let modalCloseButton = document.getElementById('modalCloseButton'); // Get existing button
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+
+            // Clear previous input/buttons if any
+            const existingInput = modalOverlay.querySelector('.modal-input');
+            if (existingInput) existingInput.remove();
+            if (modalCloseButton) modalCloseButton.remove(); // Remove existing OK button
+
+            if (input) {
+                const inputElement = document.createElement('input');
+                inputElement.type = 'email';
+                inputElement.placeholder = 'Enter your email';
+                inputElement.classList.add('modal-input');
+                modalMessage.after(inputElement); // Insert after message
+
+                const sendButton = document.createElement('button');
+                sendButton.textContent = 'Send Reset Email';
+                sendButton.classList.add('modal-button');
+                sendButton.style.marginRight = '10px';
+                sendButton.onclick = () => {
+                    if (callback) callback(inputElement.value);
+                    modalOverlay.classList.remove('show');
+                    inputElement.remove();
+                    sendButton.remove();
+                    cancelButton.remove();
+                    // Re-add default OK button if needed later
+                    modalCloseButton = document.createElement('button');
+                    modalCloseButton.id = 'modalCloseButton';
+                    modalCloseButton.classList.add('modal-button');
+                    modalCloseButton.textContent = 'OK';
+                    modalCloseButton.onclick = () => modalOverlay.classList.remove('show');
+                    modalOverlay.querySelector('.modal-content').appendChild(modalCloseButton);
+                };
+
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = 'Cancel';
+                cancelButton.classList.add('modal-button');
+                cancelButton.style.backgroundColor = '#dc3545';
+                cancelButton.onclick = () => {
+                    modalOverlay.classList.remove('show');
+                    inputElement.remove();
+                    sendButton.remove();
+                    cancelButton.remove();
+                    // Re-add default OK button if needed later
+                    modalCloseButton = document.createElement('button');
+                    modalCloseButton.id = 'modalCloseButton';
+                    modalCloseButton.classList.add('modal-button');
+                    modalCloseButton.textContent = 'OK';
+                    modalCloseButton.onclick = () => modalOverlay.classList.remove('show');
+                    modalOverlay.querySelector('.modal-content').appendChild(modalCloseButton);
+                };
+
+                modalOverlay.querySelector('.modal-content').appendChild(sendButton);
+                modalOverlay.querySelector('.modal-content').appendChild(cancelButton);
+
+            } else {
+                // Re-add default OK button if it was removed
+                modalCloseButton = document.createElement('button');
+                modalCloseButton.id = 'modalCloseButton';
+                modalCloseButton.classList.add('modal-button');
+                modalCloseButton.textContent = 'OK';
+                modalCloseButton.onclick = () => modalOverlay.classList.remove('show');
+                modalOverlay.querySelector('.modal-content').appendChild(modalCloseButton);
+            }
+
+            modalOverlay.classList.add('show');
+        }
+
+        // Initialize Firebase and check authentication state
+        async function initializeFirebase() {
+            try {
+                console.log("Initializing Firebase...");
+                console.log("Firebase Config:", firebaseConfig);
+
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                analytics = getAnalytics(app); // Initialize analytics
+
+                console.log("Firebase App:", app);
+                console.log("Firebase Auth:", auth);
+                console.log("Firebase Firestore:", db);
+                console.log("Firebase Analytics:", analytics);
+
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // User is signed in, redirect to profile page
+                        window.location.href = `${window.location.origin}/profile.html`;
+                    } else {
+                        // No user is signed in. Stay on login page for user to sign in/up.
+                        console.log("No user signed in. Staying on login page.");
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showModal("Firebase Initialization Error", `Failed to initialize Firebase. Please ensure your Firebase project is set up correctly and the configuration is valid. Error: ${error.message}`);
+            }
+        }
+
+        // Function to handle user sign up
+        async function signUpUser() {
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const username = document.getElementById('signupUsername').value;
+
+            if (password !== confirmPassword) {
+                showModal("Sign Up Error", "Passwords do not match.");
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Save username and email to Firestore 'profiles' collection
+                await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/profiles`, user.uid), {
+                    username: username,
+                    email: email,
+                    photoURL: '' // Initialize with empty photo URL
+                });
+
+                showModal("Success", "Account created successfully! You are now logged in.");
+                window.location.href = `${window.location.origin}/profile.html`; // Redirect to profile page
+            } catch (error) {
+                console.error("Error signing up:", error);
+                showModal("Sign Up Error", error.message);
+            }
+        }
+
+        // Function to handle user login
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            try {
+                // Set persistence based on "Remember me" checkbox
+                await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+                
+                await signInWithEmailAndPassword(auth, email, password);
+                showModal("Success", "Logged in successfully!");
+                // onAuthStateChanged listener will handle the redirect to profile.html
+            } catch (error) {
+                console.error("Error logging in:", error);
+                showModal("Login Error", error.message);
+            }
+        }
+
+        // Function to handle forgot password
+        async function handleForgotPassword(email) {
+            if (!email) {
+                showModal("Error", "Please enter your email address.");
+                return;
+            }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showModal("Password Reset", "If an account with that email exists, a password reset link has been sent to your email.");
+            } catch (error) {
+                console.error("Error sending password reset email:", error);
+                showModal("Password Reset Error", `Failed to send password reset email: ${error.message}`);
+            }
+        }
+
+        // Get references to elements for form toggling
+        const loginTab = document.getElementById('loginTab');
+        const signupTab = document.getElementById('signupTab');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+
+        // Function to switch between forms
+        function showForm(formToShow) {
+            if (formToShow === 'login') {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                loginTab.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+                loginTab.classList.remove('bg-gray-700', 'text-gray-300', 'hover:bg-blue-600', 'hover:text-white');
+                signupTab.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
+                signupTab.classList.add('bg-gray-700', 'text-gray-300', 'hover:bg-blue-600', 'hover:text-white');
+                document.querySelector('h2.text-3xl').textContent = 'Welcome Back!';
+            } else {
+                signupForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                signupTab.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+                signupTab.classList.remove('bg-gray-700', 'text-gray-300', 'hover:bg-blue-600', 'hover:text-white');
+                loginTab.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
+                loginTab.classList.add('bg-gray-700', 'text-gray-300', 'hover:bg-blue-600', 'hover:text-white');
+                document.querySelector('h2.text-3xl').textContent = "Let's start";
+            }
+        }
+
+        // Add event listeners to tabs
+        loginTab.addEventListener('click', () => showForm('login'));
+        signupTab.addEventListener('click', () => showForm('signup'));
+
+        // Form submission handlers
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = event.target.querySelector('button[type="submit"]');
+            button.textContent = 'Signing In...';
+            button.disabled = true;
+
+            try {
+                await loginUser();
+            } catch (error) {
+                // Error message handled by showModal inside loginUser
+            } finally {
+                button.textContent = 'Login';
+                button.disabled = false;
+            }
+        });
+
+        signupForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = event.target.querySelector('button[type="submit"]');
+            button.textContent = 'Creating Account...';
+            button.disabled = true;
+
+            try {
+                await signUpUser();
+            } catch (error) {
+                // Error message handled by showModal inside signUpUser
+            } finally {
+                button.textContent = 'Sign Up';
+                button.disabled = false;
+            }
+        });
+
+        // Event listener for Forgot Password link
+        forgotPasswordLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            showModal("Forgot Password?", "Please enter your email address to receive a password reset link.", true, handleForgotPassword);
+        });
+
+        // Initialize everything when the window loads
+        window.onload = function () {
+            initWaveBackground(); // Background function
+            // Set initial heading
+            document.querySelector('h2.text-3xl').textContent = 'Welcome Back!';
+            initializeFirebase(); // Initialize Firebase on load
+        }
+
+        // --- Three.js Interactive Wave Background Animation ---
+        let bgScene, bgCamera, bgRenderer, planeMesh;
+        let mouseX = 0, mouseY = 0;
+        let targetMouseX = 0, targetMouseY = 0; // For smooth mouse movement
+        let windowHalfX = window.innerWidth / 2;
+        let windowHalfY = window.innerHeight / 2;
+
+        // Vertex Shader: Deforms the grid to create waves
+        const vertexShader = `
+            uniform float u_time;
+            uniform vec2 u_mouse;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+
+            void main() {
+                vNormal = normal;
+                vPosition = position;
+
+                vec3 newPosition = position;
+                
+                // Wave effect based on X and Z coordinates and time
+                float wave1 = sin(newPosition.x * 0.8 + u_time * 0.5) * 0.3;
+                float wave2 = cos(newPosition.z * 0.6 + u_time * 0.7) * 0.4;
+                
+                // Mouse interaction: influence wave height near cursor
+                float distToMouse = distance(vec2(newPosition.x, newPosition.z), u_mouse * 5.0); // Scale mouse influence
+                float mouseInfluence = smoothstep(5.0, 0.0, distToMouse); // Stronger influence closer to mouse
+
+                newPosition.y += (wave1 + wave2) * (1.0 - mouseInfluence * 0.5); // Reduce wave height slightly near mouse
+                newPosition.y += mouseInfluence * sin(u_time * 10.0 + distToMouse * 2.0) * 0.6; // Add a ripple effect near mouse
+
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+            }
+        `;
+
+        // Fragment Shader: Colors the grid
+        const fragmentShader = `
+            uniform float u_time;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+
+            void main() {
+                // Basic lighting based on normal
+                vec3 lightDirection = normalize(vec3(0.5, 1.0, 0.5));
+                float lightIntensity = max(dot(vNormal, lightDirection), 0.0);
+
+                // Color based on position and time
+                vec3 color1 = vec3(0.23, 0.52, 0.96); // Blue
+                vec3 color2 = vec3(0.57, 0.20, 0.91); // Purple
+                
+                // Mix colors based on Y position and time
+                float mixFactor = (vPosition.y + 2.0) / 4.0; // Normalize Y position
+                mixFactor += sin(vPosition.x * 0.1 + u_time * 0.3) * 0.1; // Add subtle movement to color mix
+
+                vec3 finalColor = mix(color1, color2, mixFactor);
+                
+                gl_FragColor = vec4(finalColor * (0.5 + lightIntensity * 0.5), 1.0);
+            }
+        `;
+
+        function initWaveBackground() {
+            const canvas = document.getElementById('bgCanvas');
+            bgScene = new THREE.Scene();
+            bgCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            bgCamera.position.set(0, 5, 10); // Position camera above and in front of the plane
+            bgCamera.lookAt(0, 0, 0); // Look at the center of the plane
+
+            bgRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+            bgRenderer.setSize(window.innerWidth, window.innerHeight);
+            bgRenderer.setPixelRatio(window.devicePixelRatio);
+            bgRenderer.setClearColor(0x0a0a0a, 1); // Dark background
+
+            // Create a large plane geometry for the wave effect
+            const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // Width, Height, Width Segments, Height Segments
+            geometry.rotateX(-Math.PI / 2); // Rotate to be horizontal
+
+            // Create the ShaderMaterial
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    u_time: { value: 0.0 },
+                    u_mouse: { value: new THREE.Vector2(0.0, 0.0) }
+                },
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                wireframe: false // Set to true to see the grid lines
+            });
+
+            planeMesh = new THREE.Mesh(geometry, material);
+            bgScene.add(planeMesh);
+
+            animateWaveBackground();
+            document.addEventListener('mousemove', onDocumentMouseMove);
+            window.addEventListener('resize', onWaveWindowResize);
+        }
+
+        function animateWaveBackground() {
+            requestAnimationFrame(animateWaveBackground);
+
+            // Update uniforms
+            if (planeMesh && planeMesh.material && planeMesh.material.uniforms) {
+                planeMesh.material.uniforms.u_time.value = performance.now() / 1000;
+                
+                // Smoothly interpolate mouse position
+                targetMouseX += (mouseX - targetMouseX) * 0.1;
+                targetMouseY += (mouseY - targetMouseY) * 0.1;
+                planeMesh.material.uniforms.u_mouse.value.set(targetMouseX, targetMouseY);
+            }
+
+
+            // Move camera slightly based on mouse for parallax
+            if (bgCamera) {
+                bgCamera.position.x = 0 + targetMouseX * 0.5;
+                bgCamera.position.y = 5 + targetMouseY * 0.5;
+                bgCamera.lookAt(0, 0, 0); // Keep looking at the center
+            }
+
+            if (bgRenderer && bgScene && bgCamera) {
+                bgRenderer.render(bgScene, bgCamera);
+            }
+        }
+
+        function onDocumentMouseMove(event) {
+            // Normalize mouse coordinates to -1 to 1 range
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onWaveWindowResize() {
+            // Add checks to ensure bgCamera and bgRenderer are initialized
+            if (bgCamera && bgRenderer) {
+                windowHalfX = window.innerWidth / 2;
+                windowHalfY = window.innerHeight / 2;
+                bgCamera.aspect = window.innerWidth / window.innerHeight;
+                bgCamera.updateProjectionMatrix();
+                bgRenderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        // Handle window resize for background scene
+        window.addEventListener('resize', () => {
+            onWaveWindowResize(); // Background resize handler
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Scroll Animation Function
+            function handleScrollAnimation() {
+                const elements = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right, .scale-in');
+                
+                elements.forEach(element => {
+                    const elementTop = element.getBoundingClientRect().top;
+                    const elementBottom = element.getBoundingClientRect().bottom;
+                    const isVisible = (elementTop < window.innerHeight - 100) && (elementBottom > 0);
+                    
+                    if (isVisible) {
+                        element.classList.add('active');
+                    }
+                });
+            }
+
+            // Initial check for elements in view
+            handleScrollAnimation();
+
+            // Add scroll event listener
+            window.addEventListener('scroll', handleScrollAnimation);
+        });
+    </script>
+</body>
+</html>
