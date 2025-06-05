@@ -18,7 +18,7 @@ app.use(express.json()); // Enable Express to parse JSON formatted request bodie
 // For local development, you might also want to add 'http://localhost:port' if your frontend runs locally.
 // IMPORTANT: For production, do NOT use app.use(cors()); without specific origins.
 app.use(cors({
-  origin: ['https://your-frontend-name.onrender.com', 'http://localhost:3000', 'http://localhost:3001'] // IMPORTANT: Update 'https://your-frontend-name.onrender.com' with your actual frontend URL!
+  origin: ['https://naxbot.onrender.com', 'http://localhost:3000', 'http://localhost:3001'] // IMPORTANT: Update 'https://your-frontend-name.onrender.com' with your actual frontend URL!
 }));
 
 // IMPORTANT: Load Gemini API Key from an environment variable.
