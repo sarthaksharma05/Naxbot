@@ -90,7 +90,7 @@
             left: 0;
             width: 100%;
             display: flex;
-            justify-content: space-between; /* Keeps logo left, profile right */
+            justify-content: space-between; /* Keeps logo left, profile right by default */
             align-items: center;
             padding: 15px 40px;
             background: transparent;
@@ -624,69 +624,6 @@
             text-decoration: underline;
         }
 
-        /* Responsive adjustments for the reviews section */
-        @media (max-width: 768px) {
-            .reviews-container {
-                flex-direction: column; /* Stack buttons and card vertically */
-                height: auto; /* Allow height to adjust for mobile */
-                max-width: 95%; /* Adjust max-width for smaller screens */
-                padding: 0 20px; /* Adjust padding for mobile */
-            }
-
-            .review-card-wrapper {
-                width: 100%; /* Take full width on mobile */
-                height: auto; /* Allow height to adjust */
-            }
-
-            .review-card {
-                position: relative; /* Change to relative for mobile stacking */
-                width: 95%; /* Use percentage width */
-                max-width: none; /* Remove max-width on mobile */
-                margin: 20px auto; /* Add margin for vertical stacking */
-                padding: 1.5rem;
-                /* Reset transform for mobile as it's now relative */
-                transform: none; 
-            }
-
-            .nav-button {
-                position: relative; /* Change to relative for mobile stacking */
-                top: auto;
-                transform: none;
-                margin: 10px auto; /* Center buttons horizontally */
-                width: 2.5rem;
-                height: 2.5rem;
-                font-size: 1.5rem;
-            }
-
-            .nav-button.left, .nav-button.right {
-                left: auto;
-                right: auto;
-                margin-left: auto;
-                margin-right: auto;
-            }
-
-            .nav-button:hover {
-                 transform: none; /* Disable transform on hover for mobile */
-            }
-
-            .nav-button:active {
-                transform: none; /* Disable transform on active for mobile */
-            }
-
-            footer .container {
-                grid-template-columns: 1fr; /* Single column on mobile */
-                text-align: center;
-            }
-
-            footer .col-span-1 {
-                align-items: center; /* Center items in columns on mobile */
-            }
-
-            footer .flex.justify-center.md\:justify-start {
-                justify-content: center; /* Center social icons on mobile */
-            }
-        }
-
         /* Scroll Animation Classes */
         .fade-in-up {
             opacity: 0;
@@ -732,45 +669,24 @@
             transform: scale(1);
         }
 
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-            .hero-content {
-                padding: 0 20px;
-            }
+        /* === Responsive Design (Desktop First Approach - Hide Mobile Button by default) === */
 
-            .hero-title {
-                font-size: 3.5em;
-            }
-
-            .hero-subtitle {
-                font-size: 1.4em;
-            }
-
-            .feature-card {
-                width: calc(50% - 30px);
-            }
+        /* Hide mobile menu button by default for desktop */
+        .mobile-menu-button {
+            display: none; 
         }
 
-        @media (max-width: 992px) {
-            .hero-title {
-                font-size: 3em;
-            }
-
-            .hero-subtitle {
-                font-size: 1.2em;
-            }
-
-            .feature-card {
-                width: calc(50% - 20px);
-                margin: 10px;
-            }
-
-            .cta-button {
-                padding: 12px 25px;
-                font-size: 1em;
-            }
+        /* Adjust desktop navigation on larger screens */
+        nav {
+            display: flex; /* Ensure navigation is visible on desktop */
+            justify-content: center;
         }
 
+        nav ul {
+            display: flex; /* Ensure nav links are in a row on desktop */
+        }
+
+        /* Smaller screens (tablets and phones) */
         @media (max-width: 768px) {
             header {
                 padding: 10px 20px; /* Reduced padding for mobile header */
@@ -787,10 +703,26 @@
                 height: 50px;
             }
 
+            /* Show mobile menu button on smaller screens */
+            .mobile-menu-button {
+                display: block; 
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.5em;
+                cursor: pointer;
+                z-index: 1001; /* Ensure it's above everything */
+                position: absolute; /* Position absolutely within the fixed header */
+                left: 20px; /* Distance from left edge */
+                top: 50%; /* Vertically center */
+                transform: translateY(-50%); /* Adjust for its own height */
+            }
+
+            /* Mobile Navigation overlay and menu styling */
             nav {
                 position: fixed;
                 top: 0;
-                left: -100%;
+                left: -100%; /* Start off-screen */
                 width: 80%;
                 height: 100vh;
                 background: rgba(10, 10, 10, 0.95);
@@ -803,7 +735,7 @@
             }
 
             nav.active {
-                left: 0;
+                left: 0; /* Slide in */
             }
 
             nav ul {
@@ -817,20 +749,6 @@
                 padding: 15px 30px;
             }
 
-            .mobile-menu-button {
-                display: block; /* Ensure it's always visible on mobile */
-                background: none;
-                border: none;
-                color: white;
-                font-size: 1.5em;
-                cursor: pointer;
-                z-index: 1001; /* Ensure it's above everything */
-                position: absolute; /* Position absolutely within the fixed header */
-                left: 20px; /* Distance from left edge */
-                top: 50%; /* Vertically center */
-                transform: translateY(-50%); /* Adjust for its own height */
-            }
-
             .mobile-menu-overlay {
                 display: none;
                 position: fixed;
@@ -839,11 +757,76 @@
                 width: 100%;
                 height: 100%;
                 background: rgba(0, 0, 0, 0.5);
-                z-index: 999;
+                z-index: 999; /* Below the menu, above content */
             }
 
             .mobile-menu-overlay.active {
                 display: block;
+            }
+
+            /* Adjustments for reviews section on smaller screens */
+            .reviews-container {
+                flex-direction: column; /* Stack buttons and card vertically */
+                height: auto; /* Allow height to adjust for mobile */
+                max-width: 95%; /* Adjust max-width for smaller screens */
+                padding: 0 20px; /* Adjust padding for mobile */
+            }
+
+            .review-card-wrapper {
+                width: 100%; /* Take full width on mobile */
+                height: auto; /* Allow height to adjust */
+            }
+
+            .review-card {
+                position: relative; /* Change to relative for mobile stacking */
+                width: 95%; /* Use percentage width */
+                max-width: none; /* Remove max-width on mobile */
+                margin: 20px auto; /* Add margin for vertical stacking */
+                padding: 1.5rem;
+                transform: none; /* Reset transform for mobile as it's now relative */
+            }
+
+            .nav-button {
+                position: relative; /* Position buttons relative to flow */
+                top: auto;
+                transform: none;
+                margin: 10px auto; /* Center buttons horizontally */
+                width: 2.5rem;
+                height: 2.5rem;
+                font-size: 1.5rem;
+            }
+
+            .nav-button.left, .nav-button.right {
+                left: auto;
+                right: auto;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .nav-button:hover {
+                 transform: none; /* Disable transform on hover for mobile */
+            }
+
+            .nav-button:active {
+                transform: none; /* Disable transform on active for mobile */
+            }
+
+            footer .container {
+                grid-template-columns: 1fr; /* Single column on mobile */
+                text-align: center;
+            }
+
+            footer .col-span-1 {
+                align-items: center; /* Center items in columns on mobile */
+            }
+
+            footer .flex.justify-center.md\:justify-start {
+                justify-content: center; /* Center social icons on mobile */
+            }
+
+            /* Other mobile-specific font/padding adjustments */
+            .logo img {
+                height: 50px;
             }
 
             .profile-photo-img {
@@ -883,6 +866,7 @@
             }
         }
 
+        /* Even smaller screens */
         @media (max-width: 576px) {
             header {
                 padding: 8px 15px;
@@ -937,7 +921,6 @@
 <body>
     <div class="spline-background">
         <iframe src="https://my.spline.design/nexbotrobotcharacterconcept-m7pD3uBbfbZFbpE5GtXzzjs8" frameborder="0" width="100%" height="100%"></iframe>
-        <!-- REMOVED THE RECTANGLE DIV HERE -->
     </div>
 
     <header>
@@ -1034,8 +1017,8 @@
                 <ul class="space-y-2 text-gray-400">
                     <li><a href="home.html" class="hover:text-white transition-colors duration-200">Home</a></li>
                     <li><a href="chat.html" class="hover:text-white transition-colors duration-200">Chat</a></li>
-                    <li><a href="#your-own-naxbot" class="hover:text-white transition-colors duration-200">About</a></li>
-                    <li><a href="contact.html" class="hover:text-white transition-colors duration-200">Contact</a></li>
+                    <li><a href="home.html#your-own-naxbot">About</a></li>
+                    <li><a href="contact.html">Contact</a></li>
                 </ul>
             </div>
 
@@ -1134,8 +1117,13 @@
                     document.body.style.overflow = mainNav.classList.contains('active') ? 'hidden' : '';
                 }
 
-                mobileMenuButton.addEventListener('click', toggleMobileMenu);
-                mobileMenuOverlay.addEventListener('click', toggleMobileMenu);
+                // Only add event listeners if the button exists (it will on mobile)
+                if (mobileMenuButton) {
+                    mobileMenuButton.addEventListener('click', toggleMobileMenu);
+                }
+                if (mobileMenuOverlay) {
+                    mobileMenuOverlay.addEventListener('click', toggleMobileMenu);
+                }
 
                 // Close mobile menu when clicking a nav link
                 const navLinks = mainNav.querySelectorAll('a');
