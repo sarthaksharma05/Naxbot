@@ -241,12 +241,14 @@
             overflow: hidden;
             max-height: 0;
             opacity: 0;
-            transition: max-height 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease-in-out 0.2s; /* Custom cubic-bezier for smoother height */
+            visibility: hidden; /* Added visibility for smoother transition */
+            transition: max-height 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease-in-out 0.2s, visibility 0.4s ease-in-out; /* Custom cubic-bezier for smoother height */
         }
 
         .profile-dropdown.show {
             max-height: 300px; /* Expanded height (adjust as needed to fit all items) */
             opacity: 1;
+            visibility: visible;
             padding: 10px 0; /* Add padding when shown */
         }
 
@@ -647,7 +649,7 @@
             }
 
             .nav-button {
-                position: relative; /* Position buttons relative to flow */
+                position: relative; /* Change to relative for mobile stacking */
                 top: auto;
                 transform: none;
                 margin: 10px auto; /* Center buttons horizontally */
@@ -771,20 +773,77 @@
 
         @media (max-width: 768px) {
             header {
-                padding: 10px 20px;
+                padding: 10px 20px; /* Reduced padding for mobile header */
+                justify-content: flex-start; /* Align items to the start for mobile */
+            }
+
+            .logo {
+                margin-left: 20px; /* Add margin to separate from menu button */
+                flex-grow: 1; /* Allow logo to take space */
+                justify-content: center; /* Center logo if space allows */
             }
 
             .logo img {
                 height: 50px;
             }
 
+            nav {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 80%;
+                height: 100vh;
+                background: rgba(10, 10, 10, 0.95);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                flex-direction: column;
+                justify-content: center;
+                transition: left 0.3s ease;
+                z-index: 1000;
+            }
+
+            nav.active {
+                left: 0;
+            }
+
             nav ul {
-                gap: 10px;
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
             }
 
             nav ul li a {
-                padding: 8px 15px;
-                font-size: 0.9em;
+                font-size: 1.2em;
+                padding: 15px 30px;
+            }
+
+            .mobile-menu-button {
+                display: block; /* Ensure it's always visible on mobile */
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.5em;
+                cursor: pointer;
+                z-index: 1001; /* Ensure it's above everything */
+                position: absolute; /* Position absolutely within the fixed header */
+                left: 20px; /* Distance from left edge */
+                top: 50%; /* Vertically center */
+                transform: translateY(-50%); /* Adjust for its own height */
+            }
+
+            .mobile-menu-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+
+            .mobile-menu-overlay.active {
+                display: block;
             }
 
             .profile-photo-img {
@@ -873,71 +932,12 @@
                 min-width: 180px;
             }
         }
-
-        /* Mobile Navigation */
-        @media (max-width: 768px) {
-            nav {
-                position: fixed;
-                top: 0;
-                left: -100%;
-                width: 80%;
-                height: 100vh;
-                background: rgba(10, 10, 10, 0.95);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                flex-direction: column;
-                justify-content: center;
-                transition: left 0.3s ease;
-                z-index: 1000;
-            }
-
-            nav.active {
-                left: 0;
-            }
-
-            nav ul {
-                flex-direction: column;
-                align-items: center;
-                gap: 20px;
-            }
-
-            nav ul li a {
-                font-size: 1.2em;
-                padding: 15px 30px;
-            }
-
-            .mobile-menu-button {
-                display: block;
-                background: none;
-                border: none;
-                color: white;
-                font-size: 1.5em;
-                cursor: pointer;
-                z-index: 1001;
-            }
-
-            .mobile-menu-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 999;
-            }
-
-            .mobile-menu-overlay.active {
-                display: block;
-            }
-        }
-
     </style>
 </head>
 <body>
     <div class="spline-background">
         <iframe src="https://my.spline.design/nexbotrobotcharacterconcept-m7pD3uBbfbZFbpE5GtXzzjs8" frameborder="0" width="100%" height="100%"></iframe>
-        <div style="position: absolute; right: 0; bottom: 0; width: 210px; height: 60px; background: #e5e5e5; z-index: 2; pointer-events: none; border: none;"></div>
+        <!-- REMOVED THE RECTANGLE DIV HERE -->
     </div>
 
     <header>
